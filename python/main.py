@@ -4,10 +4,8 @@ from math import fabs
 import os
 import logging
 import pathlib
-from re import I
 import sqlite3
 import hashlib
-from turtle import circle
 from fastapi import FastAPI, Form, HTTPException, UploadFile, File
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -15,7 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 app = FastAPI()
 logger = logging.getLogger("uvicorn")
 logger.level = logging.INFO
-images = pathlib.Path(__file__).parent.resolve() / "image"
+images = pathlib.Path(__file__).parent.resolve() / "images"
 origins = [ os.environ.get('FRONT_URL', 'http://localhost:3000') ]
 app.add_middleware(
     CORSMiddleware,
@@ -49,21 +47,21 @@ def add_item(name: str = Form(...), category: str = Form(...), image: UploadFile
     img = image.filename
     logger.info(f"Receive item: {name},{category},{img}")
 
-    num = cur.execute("select max(rowid) from items").fetchone()[0] 
-    if num== None:
-        num = 1
-    else:
-        num = int(num) + 1
+    # num = cur.execute("select max(rowid) from items").fetchone()[0] 
+    # if num== None:
+    #     num = 1
+    # else:
+    #     num = int(num) + 1
 
     imgname, imgextension = img.split(".")
     hashed_imgname = hashlib.sha256(imgname.encode('utf-8')).hexdigest() + "." + imgextension
 
-    cur.execute("insert into items values(?,?,?,?)",(num,name,category,hashed_imgname))
+    cur.execute("insert into items values(?,?,?,?)",(name,category,hashed_imgname))
     con.commit()
 
-    image_dir = "images/{}".format(hashed_imgname)
+    images = images / hashed_imgname
 
-    with open(image_dir,"wb") as buffer:
+    with open(images,"wb") as buffer:
         shutil.copyfileobj(image.file,buffer)
         
     logger.info(f"append imtem in db: {name},{category},{img}")
